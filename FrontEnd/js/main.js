@@ -28,8 +28,9 @@ function loadConfig() {
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const captureButton = document.getElementById('captureButton');
+const detectFacesButton = document.getElementById('detectFacesButton');
 const registerResult = document.getElementById('registerResult');
-const detectResult = document.getElementById('detectedName');
+const detectedName = document.getElementById('detectedName');
 const registerName = document.getElementById('registerName');
 
 // Start webcam feed
@@ -61,16 +62,72 @@ captureButton.addEventListener('click', () => {
     else{
         // Call function to send the captured image to the backend
         console.log('Sending image to backend...')
-        sendImageToBackend(imageDataURL);
+        sendImageToBackend(imageDataURL, registerName.value);
     }
 
 });
 
+// Capture image when the button is clicked, then send to back end to detect the face and return the result on the screen
+detectFacesButton.addEventListener('click', () => {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    //Reset the text fields on the screen
+    detectedName.value = '';
+    detectResult.textContent = '';
+
+    // Draw current frame from the video onto the canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Get the image data as a base64-encoded JPEG
+    const imageDataURL = canvas.toDataURL('image/jpeg');
+    // var detectResult = document.getElementById('detectResult');
+
+    loadConfig() // Load the configuration
+        .then(config => {
+            const backendURL = config.backendURL ; // Extract backend host from config
+
+            //Set up the API body
+            const apiData = {
+                image: imageDataURL,
+                //param3: textbox3Value
+            };
+            //console.log('API data:', apiData)
+
+            fetch(`${backendURL}/detectFaces`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                //body: formData
+                body: JSON.stringify(apiData), // Send as JSON with 'image' key
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the response from the backend
+                    if(data.recognized_faces){
+                        detectedName.value = data.recognized_faces;
+                    }
+
+                    detectResult.textContent = `Result: ${data.message}`;
+                    detectResult.style.color = "green";
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    detectResult.textContent = `Error: ${error.message}`;
+                    detectResult.style.color = "red";
+                });
+        });
+
+})
+
 // Function to send captured image to the backend
-function sendImageToBackend(imageDataURL) {
+function sendImageToBackend(imageDataURL, registerName) {
     // Convert image data URL to a blob
     const imageBlob = dataURLtoBlob(imageDataURL);
     //console.log('imageBlob: ', imageBlob)
+
+    var registerResult = document.getElementById('registerResult');
 
     // Create a FormData object to send the image
     const formData = new FormData();
@@ -83,30 +140,37 @@ function sendImageToBackend(imageDataURL) {
             // Send the image to the backend (replace '/processImage' with your endpoint)
             //console.log('Backend host: ', backendURL)
             //console.log('formData: ', formData)
-            fetch(`${backendURL}/processImage`, {
+
+            //Set up the API body
+            const apiData = {
+                image: imageDataURL,
+                name: registerName,
+                //param3: textbox3Value
+            };
+            console.log('API data:', apiData)
+
+            fetch(`${backendURL}/registerFace`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
                 //body: formData
-                body: JSON.stringify({ image: imageDataURL }), // Send as JSON with 'image' key
-                //body: JSON.stringify({imageData}),
+                body: JSON.stringify(apiData), // Send as JSON with 'image' key
             })
                 .then(response => response.json())
                 .then(data => {
                     // Handle the response from the backend
-                    var resultDiv = document.getElementById('result');
-                    resultDiv.innerHTML = '';
                     if(data.detected_face){
                         detectResult.value = data.detected_face;
                     }
 
-
-                    resultElement.innerText = `Result: ${data.result}`;
+                    registerResult.textContent = `Result: ${data.message}`;
+                    registerResult.style.color = "green";
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    resultElement.innerText = `Error: ${error.message}`;
+                    registerResult.textContent = `Error: ${error.message}`;
+                    registerResult.style.color = "red";
                 });
         });
 }
@@ -124,10 +188,6 @@ function dataURLtoBlob(dataURL) {
 document.addEventListener('DOMContentLoaded', () => {
     // Your initialization code can go here
     console.log('DOM fully loaded and parsed');
-
-    // Example: Call a function when a button is clicked
-    const startButton = document.getElementById('startButton');
-    startButton.addEventListener('click', startDetection);
 });
 
 // Function to start face detection

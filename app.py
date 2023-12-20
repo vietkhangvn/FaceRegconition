@@ -1,5 +1,6 @@
 import base64
 import datetime
+import re
 
 import cv2
 import dlib
@@ -111,18 +112,31 @@ def compare_features(features):
 
 
 def load_known_faces():
+    print('Loading known faces...')
     # Load known faces from a folder
-    known_faces_dir = "input_database"
+    # known_faces_dir = "input_database"
+    known_faces_dir = "Captured"
     known_face_encodings = []
     known_face_names = []
+    i = 0
+    for root, dirs, files in os.walk(known_faces_dir):
+        for filename in files:
+            #  print(filename)
+            if filename.endswith(".jpg") or filename.endswith(".png"):
+                image_path = os.path.join(root, filename)
+                known_image = face_recognition.load_image_file(image_path)
 
-    for filename in os.listdir(known_faces_dir):
-        if filename.endswith(".jpg") or filename.endswith(".png"):
-            image_path = os.path.join(known_faces_dir, filename)
-            known_image = face_recognition.load_image_file(image_path)
-            face_encoding = face_recognition.face_encodings(known_image)[0]
-            known_face_encodings.append(face_encoding)
-            known_face_names.append(os.path.splitext(filename)[0])
+                res = re.findall(r"([A-Za-z]+)[_-]\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.jpg", filename)
+                if not res:
+                    continue
+                #  print(' known name: ' + str(res[0]))
+
+                face_encoding = face_recognition.face_encodings(known_image)[0]
+                known_face_encodings.append(face_encoding)
+                # known_face_names.append(os.path.splitext(filename)[0])
+                known_face_names.append(res[0])
+                i = i + 1
+    print('Loaded ' + str(i) + ' known faces')
     return known_face_encodings, known_face_names
 
 
@@ -156,10 +170,11 @@ def recognize_faces_old(image_bytes):
     return name
 
 
-@app.route('/processImage', methods=['POST'])
-def process_image():
+@app.route('/registerFace', methods=['POST'])
+def register_face():
     data = request.get_json()
     image_data = data['image']
+    image_name = data['name']
 
     # Decode base64 image data
     # image_bytes = io.BytesIO(image_data.split(',')[1].encode('utf-8'))
@@ -171,16 +186,16 @@ def process_image():
 
         image_format = 'jpg'
         if image_format:
-            print('image format: ' + image_format)
-            file_name = 'image.' + image_format
-
             # Save the image
-            filename = f"Captured/captured_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+            folder_path = f"Captured/{image_name}"
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+            filename = f"{folder_path}/{image_name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
             # with open(os.path.join(app.config['UPLOAD_FOLDER'], file_name), 'wb') as f:
             with open(filename, 'wb') as f:
                 f.write(image_bytes)
 
-            recognize_name = recognize_faces_old(image_bytes)
+            # recognize_name = recognize_faces_old(image_bytes)
 
             # Extract features and compare with database
             # face_locations = detect_faces(image_bytes)
@@ -194,15 +209,12 @@ def process_image():
             #     else:
             #         return {'message': "Image captured but person could not be identified"}
         else:
-            print('Received image is corrupted!')
+            # print('Received image is corrupted!')
             return jsonify({'message': 'Received image is corrupted!'})
 
-        # Perform further processing on the image blob here
-        # ...
-
     # Return a response message
-    return jsonify({'message': 'Image captured and processed successfully!',
-                    'detected_face': recognize_name
+    return jsonify({'message': 'Image captured and processed successfully!'
+                    # 'detected_face': recognize_name
                     })
 
 
@@ -312,43 +324,45 @@ def add_image():
 
 
 # API endpoint for recognizing faces in an image
-@app.route('/recognize_faces', methods=['POST'])
-def recognize_faces():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image provided'})
+@app.route('/detectFaces', methods=['POST'])
+def detect_faces():
+    data = request.get_json()
+    image_data = data['image']
 
-    image = request.files['image']
-    if image.filename == '':
-        return jsonify({'error': 'No selected file'})
-
-    if image:
+    if image_data:
         try:
+            image_bytes = base64.b64decode(image_data.split(',')[1])
+            recognized_faces = recognize_faces_old(image_bytes)
+            # Old processing for reference when using DB ------------------------------
             # Save the image temporarily
-            image_path = 'temp.jpg'
-            image.save(image_path)
+            # image_path = 'temp.jpg'
+            # image.save(image_path)
 
             # Load the image and recognize faces
-            unknown_image = face_recognition.load_image_file(image_path)
-            unknown_face_encodings = face_recognition.face_encodings(unknown_image)
+            # unknown_image = face_recognition.load_image_file(image_path)
+            # unknown_face_encodings = face_recognition.face_encodings(unknown_image)
 
             # Retrieve known face encodings from the database
-            cursor.execute("SELECT person_id, encoding FROM Encodings")
-            known_encodings = cursor.fetchall()
+            # cursor.execute("SELECT person_id, encoding FROM Encodings")
+            # known_encodings = cursor.fetchall()
 
-            recognized_faces = []
-            for unknown_encoding in unknown_face_encodings:
-                for person_id, encoding_bytes in known_encodings:
-                    known_encoding = face_recognition.face_encodings(bytes(encoding_bytes))
-                    results = face_recognition.compare_faces(known_encoding, unknown_encoding)
-                    if True in results:
-                        recognized_faces.append({'person_id': person_id})
+            # recognized_faces = []
+            # for unknown_encoding in unknown_face_encodings:
+            #     for person_id, encoding_bytes in known_encodings:
+            #         known_encoding = face_recognition.face_encodings(bytes(encoding_bytes))
+            #         results = face_recognition.compare_faces(known_encoding, unknown_encoding)
+            #         if True in results:
+            #             recognized_faces.append({'person_id': person_id})
 
             # Delete the temporary image file
-            os.remove(image_path)
-
-            return jsonify({'recognized_faces': recognized_faces})
+            # os.remove(image_path)
+            # -------------------------------------------------------------------------
+            return jsonify({'message': 'Image captured and processed successfully!',
+                            'recognized_faces': recognized_faces})
         except (Exception, psycopg2.DatabaseError) as error:
             return jsonify({'error': f'Error recognizing faces: {error}'})
+    else:
+        return jsonify({'error': 'No image provided'})
 
 
 # API endpoint to retrieve recognized faces
