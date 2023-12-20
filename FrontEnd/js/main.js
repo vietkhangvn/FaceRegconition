@@ -28,8 +28,9 @@ function loadConfig() {
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const captureButton = document.getElementById('captureButton');
-const resultElement = document.getElementById('result');
+const registerResult = document.getElementById('registerResult');
 const detectResult = document.getElementById('detectedName');
+const registerName = document.getElementById('registerName');
 
 // Start webcam feed
 navigator.mediaDevices.getUserMedia({ video: true })
@@ -40,7 +41,7 @@ navigator.mediaDevices.getUserMedia({ video: true })
         console.error('Error accessing the camera:', error);
     });
 
-// Capture image when the button is clicked
+// Capture image when the button is clicked, then send to back end to save
 captureButton.addEventListener('click', () => {
     const context = canvas.getContext('2d');
     canvas.width = video.videoWidth;
@@ -51,11 +52,18 @@ captureButton.addEventListener('click', () => {
 
     // Get the image data as a base64-encoded JPEG
     const imageDataURL = canvas.toDataURL('image/jpeg');
-    console.log('imageDataURL: ', imageDataURL)
+    //console.log('imageDataURL: ', imageDataURL)
 
-    //console.log("imageDataURL: " + imageDataURL)
-    // Call function to send the captured image to the backend
-    sendImageToBackend(imageDataURL);
+    //Get the Name
+    if (registerName.value == null || registerName.value == ""){
+        registerResult.innerHTML = "Error: Name is empty!"
+    }
+    else{
+        // Call function to send the captured image to the backend
+        console.log('Sending image to backend...')
+        sendImageToBackend(imageDataURL);
+    }
+
 });
 
 // Function to send captured image to the backend

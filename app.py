@@ -1,4 +1,5 @@
 import base64
+import datetime
 
 import cv2
 import dlib
@@ -174,9 +175,9 @@ def process_image():
             file_name = 'image.' + image_format
 
             # Save the image
-            # filename = f"captured_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+            filename = f"Captured/captured_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
             # with open(os.path.join(app.config['UPLOAD_FOLDER'], file_name), 'wb') as f:
-            with open(file_name, 'wb') as f:
+            with open(filename, 'wb') as f:
                 f.write(image_bytes)
 
             recognize_name = recognize_faces_old(image_bytes)

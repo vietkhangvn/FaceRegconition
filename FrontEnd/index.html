@@ -3,19 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <title>Face Recognition</title>
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
     <h1>Face Recognition Web App</h1>
 
-    <button id="startButton">Start Detection</button>
-    <button id="captureButton">Capture Image</button>
+    <table>
+        <tr>
+            <td>
+                <video id="video" width="640" height="480" autoplay></video>
+                <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+            </td>
+            <td style="vertical-align:top">
+                <!-- Tab links -->
+                <div class="tab">
+                  <button class="tablinks" onclick="openTab(event, 'tabRegister')">Register</button>
+                  <button class="tablinks" onclick="openTab(event, 'tabDetect')" id="defaultOpenTab">Detect</button>
+                </div>
+                <!-- Tab content -->
+                <div id="tabRegister" class="tabcontent">
+                  <h3>Register new face</h3>
+                  <p>Input all of necessary fields below and press capture image.</p>
+                  <table>
+                      <tr>
+                          <td><p> Name: </p></td>
+                          <td><input type="text" id="registerName"></td>
+                      </tr>
+                      <tr>
+                          <td>
+                              <button id="captureButton">Capture Image</button>
+                              <p id="registerResult"></p>
+                          </td>
+                      </tr>
+                  </table>
+
+                </div>
+                <div id="tabDetect" class="tabcontent">
+                  <h3>Detect the Attendee</h3>
+                  <p>Click Detect button to start detecting people</p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+
+                <button id="startButton">Start Detection</button>
+
+            </td>
+        </tr>
+    </table>
+
+
+
     <div id="svName"></div>
     <input type="text" id="detectedName" placeholder="Detected Name" readonly>
 
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
 
-    <p id="result"></p>
 
     <!-- Load TensorFlow.js, faceapi.js, and your JavaScript files -->
     <!--script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
@@ -29,6 +72,9 @@
         // Add event listener to start the face detection process when the button is clicked
         document.getElementById('startButton').addEventListener('click', startFaceDetection);
 
+        // Get the element with id="defaultOpenTab" and click on it
+        document.getElementById("defaultOpenTab").click();
+
         async function startFaceDetection() {
             try {
                 // Call the function to initiate face detection
@@ -36,6 +82,27 @@
             } catch (error) {
                 console.error('Error in face detection:', error);
             }
+        }
+
+        function openTab(evt, tabName) {
+          // Declare all variables
+          var i, tabcontent, tablinks;
+
+          // Get all elements with class="tabcontent" and hide them
+          tabcontent = document.getElementsByClassName("tabcontent");
+          for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+          }
+
+          // Get all elements with class="tablinks" and remove the class "active"
+          tablinks = document.getElementsByClassName("tablinks");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+
+          // Show the current tab, and add an "active" class to the button that opened the tab
+          document.getElementById(tabName).style.display = "block";
+          evt.currentTarget.className += " active";
         }
     </script>
 
