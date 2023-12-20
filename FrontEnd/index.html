@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Recognition</title>
+</head>
+<body>
+    <h1>Face Recognition Web App</h1>
+
+    <button id="startButton">Start Detection</button>
+    <button id="captureButton">Capture Image</button>
+    <div id="svName"></div>
+    <input type="text" id="detectedName" placeholder="Detected Name" readonly>
+
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+    <p id="result"></p>
+
+    <!-- Load TensorFlow.js, faceapi.js, and your JavaScript files -->
+    <!--script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/faceDetection.js"></script>
+
+    <script>
+        // Add event listener to start the face detection process when the button is clicked
+        document.getElementById('startButton').addEventListener('click', startFaceDetection);
+
+        async function startFaceDetection() {
+            try {
+                // Call the function to initiate face detection
+                await detectAndValidateFace();
+            } catch (error) {
+                console.error('Error in face detection:', error);
+            }
+        }
+    </script>
+
+</body>
+</html>
