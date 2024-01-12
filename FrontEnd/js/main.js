@@ -31,7 +31,9 @@ const captureButton = document.getElementById('captureButton');
 const detectFacesButton = document.getElementById('detectFacesButton');
 const registerResult = document.getElementById('registerResult');
 const detectedName = document.getElementById('detectedName');
+const detectedID = document.getElementById('detectedID');
 const registerName = document.getElementById('registerName');
+const registerID = document.getElementById('registerID');
 
 // Start webcam feed
 navigator.mediaDevices.getUserMedia({ video: true })
@@ -55,14 +57,20 @@ captureButton.addEventListener('click', () => {
     const imageDataURL = canvas.toDataURL('image/jpeg');
     //console.log('imageDataURL: ', imageDataURL)
 
+    //Get the ID
+    if (registerID.value == null || registerID.value == ""){
+        registerResult.innerHTML = "Error: ID is empty!"
+        return
+    }
     //Get the Name
     if (registerName.value == null || registerName.value == ""){
         registerResult.innerHTML = "Error: Name is empty!"
+        return
     }
     else{
         // Call function to send the captured image to the backend
         console.log('Sending image to backend...')
-        sendImageToBackend(imageDataURL, registerName.value);
+        sendImageToBackend(imageDataURL, registerName.value, registerID.value);
     }
 
 });
@@ -74,7 +82,8 @@ detectFacesButton.addEventListener('click', () => {
     canvas.height = video.videoHeight;
     //Reset the text fields on the screen
     detectedName.value = '';
-    detectResult.textContent = '';
+    detectResult.textContent = 'Detecting face...';
+    detectResult.style.color = '';
 
     // Draw current frame from the video onto the canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -82,6 +91,7 @@ detectFacesButton.addEventListener('click', () => {
     // Get the image data as a base64-encoded JPEG
     const imageDataURL = canvas.toDataURL('image/jpeg');
     // var detectResult = document.getElementById('detectResult');
+
 
     loadConfig() // Load the configuration
         .then(config => {
@@ -105,8 +115,9 @@ detectFacesButton.addEventListener('click', () => {
                 .then(response => response.json())
                 .then(data => {
                     // Handle the response from the backend
-                    if(data.recognized_faces){
-                        detectedName.value = data.recognized_faces;
+                    if(data.recognized_name){
+                        detectedName.value = data.recognized_name;
+                        detectedID.value = data.recognized_id;
                     }
 
                     detectResult.textContent = `Result: ${data.message}`;
@@ -122,7 +133,7 @@ detectFacesButton.addEventListener('click', () => {
 })
 
 // Function to send captured image to the backend
-function sendImageToBackend(imageDataURL, registerName) {
+function sendImageToBackend(imageDataURL, registerName, registerID) {
     // Convert image data URL to a blob
     const imageBlob = dataURLtoBlob(imageDataURL);
     //console.log('imageBlob: ', imageBlob)
@@ -143,8 +154,9 @@ function sendImageToBackend(imageDataURL, registerName) {
 
             //Set up the API body
             const apiData = {
-                image: imageDataURL,
+                id: registerID,
                 name: registerName,
+                image: imageDataURL
                 //param3: textbox3Value
             };
             console.log('API data:', apiData)
